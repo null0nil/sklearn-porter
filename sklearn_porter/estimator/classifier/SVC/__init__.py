@@ -173,6 +173,20 @@ class SVC(Classifier):
         self.intercepts = inters
         self.n_intercepts = len(est._intercept_)
 
+        # # probA:   TC 2021-03-08 (Mon) --
+        # probA = [temp_type.format(self.repr(i)) for i in est.probA_]
+        # probA = ', '.join(probA)
+        # probA = temp_arr_.format(type='double', name='probA',
+        #                           values=probA, n=len(est.probA_))
+        # self.probA = probA
+        
+        # #probB:    TC 2021-03-08 (Mon) --
+        # probB = [temp_type.format(self.repr(i)) for i in est.probB_]
+        # probB = ', '.join(probB)
+        # probB = temp_arr_.format(type='double', name='probB',
+        #                           values=probB, n=len(est.probB_))
+        # self.probB = probB
+
         # Kernel:
         self.kernel = str(self.params['kernel'])
         if self.target_language == 'c':
@@ -220,6 +234,7 @@ class SVC(Classifier):
         self.method = self.create_method()
         return self.create_class()
 
+    
     def export_data(self, directory, filename, with_md5_hash=False):
         """
         Save model data in a JSON file.
@@ -243,7 +258,9 @@ class SVC(Classifier):
             'coef0': float(self.coef0),
             'degree': float(self.degree),
             'nClasses': int(self.n_classes),
-            'nRows': int(self.n_svs_rows)
+            'nRows': int(self.n_svs_rows),
+            'probA': self.estimator.probA_.tolist(), # TC 2021-03-08 (Mon) --
+            'probB': self.estimator.probB_.tolist()  # TC 2021-03-08 (Mon) --
         }
         encoder.FLOAT_REPR = lambda o: self.repr(o)
         json_data = dumps(model_data, sort_keys=True)

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Scanner;
 import com.google.gson.Gson;
 
-
 class {class_name} {{
 
     private enum Kernel {{ LINEAR, POLY, RBF, SIGMOID }}
@@ -21,9 +20,12 @@ class {class_name} {{
         private double gamma;
         private double coef0;
         private double degree;
+        private double[] probA; // TC 2021-03-08 (Mon) --
+        private double[] probB; // TC 2021-03-08 (Mon) --
     }}
 
     private Classifier clf;
+    public double [] probs;     // TC 2021-03-08 (Mon) --
 
     public {class_name}(String file) throws FileNotFoundException {{
         String jsonStr = new Scanner(new File(file)).useDelimiter("\\Z").next();
@@ -33,6 +35,8 @@ class {class_name} {{
             this.clf.classes[i] = i;
         }}
         this.clf.kkernel = Kernel.valueOf(this.clf.kernel.toUpperCase());
+        // System.out.println (this.clf.probA[0]); // TC 2021-03-08 (Mon) --
+        // System.out.println (this.clf.probB[0]); // TC 2021-03-08 (Mon) --
     }}
 
     public int {method_name}(double[] features) {{
@@ -132,6 +136,16 @@ class {class_name} {{
             }}
         }}
 
+
+        // TC 2021-03-08 (Mon) --
+        // Probability:
+        // double [] probs = clf.predict_proba (clf.nClasses, double[] dec_values,
+        //                                      double[] probA, double[] probB)
+        // System.out.println ("decisions are");
+        // System.out.println (decisions[0]);
+        // System.out.println (decisions[1]);
+        probs = predict_proba (clf.nClasses, decisions, clf.probA, clf.probB);
+        
         int[] votes = new int[this.clf.intercepts.length];
         for (int i = 0, d = 0, l = this.clf.nRows; i < l; i++) {{
             for (int j = i + 1; j < l; j++) {{
@@ -155,6 +169,118 @@ class {class_name} {{
         return this.clf.classes[classIdx];
     }}
 
+
+
+
+    private static double sigmoid_predict (double decision_value, double A, double B)
+    {{
+        double fApB = decision_value*A+B;
+        // 1-p used later; avoid catastrophic cancellation
+        if (fApB >= 0)
+            return Math.exp(-fApB)/(1.0+Math.exp(-fApB));
+        else
+            return 1.0/(1+Math.exp(fApB)) ;
+    }}
+
+
+    // Method 2 from the multiclass_prob paper by Wu, Lin, and Weng
+    private static void multiclass_probability (int k, double[][] r, double[] p)
+    {{
+        int t,j;
+        int iter = 0, max_iter=Math.max(100,k);
+        double[][] Q=new double[k][k];
+        double[] Qp=new double[k];
+        double pQp, eps=0.005/k;
+        
+        for (t=0;t<k;t++)
+            {{
+                p[t]=1.0/k;  // Valid if k = 1
+                Q[t][t]=0;
+                for (j=0;j<t;j++)
+                    {{
+                        Q[t][t]+=r[j][t]*r[j][t];
+                        Q[t][j]=Q[j][t];
+                    }}
+                for (j=t+1;j<k;j++)
+                    {{
+                        Q[t][t]+=r[j][t]*r[j][t];
+                        Q[t][j]=-r[j][t]*r[t][j];
+                    }}
+            }}
+        for (iter=0;iter<max_iter;iter++)
+            {{
+                // stopping condition, recalculate QP,pQP for numerical accuracy
+                pQp=0;
+                for (t=0;t<k;t++)
+                    {{
+                        Qp[t]=0;
+                        for (j=0;j<k;j++)
+                            Qp[t]+=Q[t][j]*p[j];
+                        pQp+=p[t]*Qp[t];
+                    }}
+                double max_error=0;
+                for (t=0;t<k;t++)
+                    {{
+                        double error=Math.abs(Qp[t]-pQp);
+                        if (error>max_error)
+                            max_error=error;
+                    }}
+                if (max_error<eps) break;
+                
+                for (t=0;t<k;t++)
+                    {{
+                        double diff=(-Qp[t]+pQp)/Q[t][t];
+                        p[t]+=diff;
+                        pQp=(pQp+diff*(diff*Q[t][t]+2*Qp[t]))/(1+diff)/(1+diff);
+                        for (j=0;j<k;j++)
+                            {{
+                                Qp[j]=(Qp[j]+diff*Q[t][j])/(1+diff);
+                                p[j]/=(1+diff);
+                            }}
+                    }}
+            }}
+        // if (iter>=max_iter)
+        //     svm.info("Exceeds max_iter in multiclass_prob\n");
+    }}
+
+    
+    // Method 2 from the multiclass_prob paper by Wu, Lin, and Weng
+    private static double[] predict_proba (int nr_class, double[] dec_values,
+                                           double[] probA, double[] probB) 
+    {{
+        // int i;
+        // int nr_class = model.nr_class;
+        // double[] dec_values = new double[nr_class*(nr_class-1)/2];
+        // svm_predict_values(model, x, dec_values);
+        
+        double min_prob=1e-7;
+        double[][] pairwise_prob = new double[nr_class][nr_class];
+        double[] prob_estimates= new double[nr_class];
+        
+        int k=0;
+        for (int i=0;i<nr_class;i++)
+            for(int j=i+1;j<nr_class;j++)
+                {{
+                    pairwise_prob[i][j] =
+                        Math.min (Math.max (sigmoid_predict (dec_values[k],
+                                                             probA[k], probB[k]),
+                                            min_prob), 1-min_prob);
+                    pairwise_prob[j][i] = 1 - pairwise_prob[i][j];
+                    k++;
+                }}
+        if (nr_class == 2)
+            {{
+                prob_estimates[0] = pairwise_prob[0][1];
+                prob_estimates[1] = pairwise_prob[1][0];
+            }}
+        else
+            multiclass_probability(nr_class,pairwise_prob,prob_estimates);
+    
+        return prob_estimates;
+    }}
+
+
+    
     public static void main(String[] args) throws FileNotFoundException {{
         if (args.length > 0 && args[0].endsWith(".json")) {{
 
@@ -174,6 +300,10 @@ class {class_name} {{
             int prediction = clf.{method_name}(features);
             System.out.println(prediction);
 
+            // Probability:  TC 2021-03-08 (Mon) --
+            for (double element: clf.probs) {{
+                System.out.println(element);
+            }}
         }}
     }}
 }}
