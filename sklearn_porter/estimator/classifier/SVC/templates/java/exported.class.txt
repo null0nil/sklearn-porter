@@ -280,6 +280,18 @@ class {class_name} {{
     }}
 
 
+    public double[] get_predict_proba () {{
+        return probs;
+    }}
+
+    public double get_max_predict_proba () {{
+        if (probs == null) return 0;
+        int prob_max_idx = 0;
+        for (int i = 1; i < clf.nClasses; i++)
+            if (probs[i] > probs[prob_max_idx])
+                prob_max_idx = i;
+        return probs [prob_max_idx];
+    }}
     
     public static void main(String[] args) throws FileNotFoundException {{
         if (args.length > 0 && args[0].endsWith(".json")) {{
