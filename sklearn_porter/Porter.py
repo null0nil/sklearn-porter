@@ -7,16 +7,19 @@ import types
 import numpy as np
 
 from sklearn.metrics import accuracy_score
-from sklearn.tree.tree import DecisionTreeClassifier
-from sklearn.ensemble.weight_boosting import AdaBoostClassifier
-from sklearn.ensemble.forest import RandomForestClassifier
-from sklearn.ensemble.forest import ExtraTreesClassifier
-from sklearn.svm.classes import LinearSVC
-from sklearn.svm.classes import SVC
-from sklearn.svm.classes import NuSVC
-from sklearn.neighbors.classification import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.naive_bayes import BernoulliNB
+# from sklearn.tree.tree import DecisionTreeClassifier
+# from sklearn.ensemble.weight_boosting import AdaBoostClassifier
+# from sklearn.ensemble.forest import RandomForestClassifier
+# from sklearn.ensemble.forest import ExtraTreesClassifier
+# from sklearn.svm.classes import LinearSVC
+# from sklearn.svm.classes import SVC
+# from sklearn.svm.classes import NuSVC
+from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
+from sklearn.svm import NuSVC
+# from sklearn.neighbors.classification import KNeighborsClassifier
+# from sklearn.naive_bayes import GaussianNB
+# from sklearn.naive_bayes import BernoulliNB
 
 from sklearn_porter.utils.Environment import Environment
 from sklearn_porter.utils.Shell import Shell
@@ -250,23 +253,23 @@ class Porter(object):
 
         # sklearn version < 0.18.0
         classifiers = (
-            AdaBoostClassifier,
-            BernoulliNB,
-            DecisionTreeClassifier,
-            ExtraTreesClassifier,
-            GaussianNB,
-            KNeighborsClassifier,
+            # AdaBoostClassifier,
+            # BernoulliNB,
+            # DecisionTreeClassifier,
+            # ExtraTreesClassifier,
+            # GaussianNB,
+            # KNeighborsClassifier,
             LinearSVC,
             NuSVC,
-            RandomForestClassifier,
+            # RandomForestClassifier,
             SVC,
         )
 
         # sklearn version >= 0.18.0
-        if self.sklearn_ver[:2] >= (0, 18):
-            from sklearn.neural_network.multilayer_perceptron \
-                import MLPClassifier
-            classifiers += (MLPClassifier, )
+        # if self.sklearn_ver[:2] >= (0, 18):
+        #     from sklearn.neural_network.multilayer_perceptron \
+        #         import MLPClassifier
+        #     classifiers += (MLPClassifier, )
 
         return classifiers
 
@@ -285,10 +288,10 @@ class Porter(object):
         regressors = ()
 
         # sklearn version >= 0.18.0
-        if self.sklearn_ver[:2] >= (0, 18):
-            from sklearn.neural_network.multilayer_perceptron \
-                import MLPRegressor
-            regressors += (MLPRegressor, )
+        # if self.sklearn_ver[:2] >= (0, 18):
+        #     from sklearn.neural_network.multilayer_perceptron \
+        #         import MLPRegressor
+        #     regressors += (MLPRegressor, )
 
         return regressors
 
